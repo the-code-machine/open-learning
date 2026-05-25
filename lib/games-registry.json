@@ -17,6 +17,12 @@
       "label": "Real or Fake (Wikipedia titles)",
       "description": "10 article titles, 10 seconds each. Decide real or fake. Speed breaks ties.",
       "defaultMaxScore": 0
+    },
+    {
+      "key": "citation-needed-v1",
+      "label": "Citation Needed? (Wikipedia claims)",
+      "description": "10 statements, 10 seconds each. Decide if each claim needs a citation. Speed breaks ties.",
+      "defaultMaxScore": 0
     }
   ],
   "_howToAdd": "When you build a playable game component in components/games/, register it here: add an object with a unique 'key' (e.g. 'quiz-v1'), a human 'label' shown in the admin dropdown, a short 'description', and a 'defaultMaxScore'. Then map the key to the actual component in components/games/registry.tsx. The admin game form reads this file to populate the component dropdown; the games table stores the chosen key in component_key."
