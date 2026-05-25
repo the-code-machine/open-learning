@@ -4,6 +4,7 @@ import type { ComponentType } from "react";
 import type { GamePlayProps } from "@/lib/game-types";
 import QuizGame from "./QuizGame";
 import RealOrFakeGame from "./RealOrFakeGame";
+import CitationNeededGame from "./CitationNeededGame";
 
 /**
  * Registry of playable game components.
@@ -23,6 +24,7 @@ export interface RegistryEntry {
 export const GAME_REGISTRY: Record<string, RegistryEntry> = {
   "quiz-v1": { Play: QuizGame },
   "real-or-fake-v1": { Play: RealOrFakeGame },
+  "citation-needed-v1": { Play: CitationNeededGame },
 };
 
 export function getRegistryEntry(key: string): RegistryEntry | null {
