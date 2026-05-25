@@ -34,7 +34,7 @@ import type { GamePlayProps } from "@/lib/game-types";
 
 const TOTAL_QUESTIONS = 10;
 const SECONDS_PER_Q = 10;
-const BASE_POINTS = 100000;
+const BASE_POINTS = 1000;
 const MAX_SPEED_BONUS = 999;
 
 interface Statement {
