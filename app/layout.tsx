@@ -3,6 +3,7 @@ import { Open_Sans } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import Providers from "./providers";
 
 // Initialize Open Sans
 const openSans = Open_Sans({
@@ -25,12 +26,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${openSans.variable} font-sans antialiased`}>
         {/* Navbar is placed here so it appears on all pages */}
-        <Navbar />
-        <main className="pt-20">
-          {/* pt-20 adds padding so content doesn't hide behind fixed navbar */}
-          {children}
-        </main>
-        <Footer />
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

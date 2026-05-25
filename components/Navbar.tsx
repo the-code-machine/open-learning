@@ -10,6 +10,7 @@ const navLinks = [
   { name: "About", href: "/about" },
   { name: "Mission", href: "/mission" },
   { name: "Our Events", href: "/events" },
+  { name: "Games", href: "/games" },
   { name: "Projects", href: "/projects" },
   // { name: "Contact", href: "/contact" },
 ];
@@ -57,7 +58,7 @@ export default function Navbar() {
                     "relative py-2  font-semibold transition-colors duration-300",
                     isActive
                       ? "text-brand-blue"
-                      : "text-gray-600 hover:text-brand-blue"
+                      : "text-gray-600 hover:text-brand-blue",
                   )}
                 >
                   {link.name}
@@ -65,7 +66,7 @@ export default function Navbar() {
                   <span
                     className={clsx(
                       "absolute bottom-0 left-0 h-[3px] bg-brand-red rounded-full transition-all duration-300 ease-out",
-                      isActive ? "w-full" : "w-0 group-hover:w-full"
+                      isActive ? "w-full" : "w-0 group-hover:w-full",
                     )}
                   ></span>
                   {/* Hover trigger wrapper to ensure w-0 becomes w-full on hover */}
@@ -99,7 +100,7 @@ export default function Navbar() {
       <div
         className={clsx(
           "md:hidden bg-white overflow-hidden transition-all duration-300 ease-in-out border-t border-gray-100",
-          isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0",
         )}
       >
         <div className="px-4 pt-2 pb-6 space-y-2 shadow-inner">
@@ -114,7 +115,7 @@ export default function Navbar() {
                   "block px-4 py-3 rounded-lg text-base font-medium transition-colors",
                   isActive
                     ? "bg-brand-blue/10 text-brand-blue border-l-4 border-brand-red"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-brand-blue"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-brand-blue",
                 )}
               >
                 {link.name}
