@@ -33,9 +33,9 @@ const TOTAL_QUESTIONS = 10;
 const SECONDS_PER_Q = 10;
 // Each correct answer is worth far more than every speed bonus combined, so
 // correct count strictly dominates and time only breaks ties.
-const BASE_POINTS = 1000;
+const BASE_POINTS = 100;
 // Max speed bonus per question; 10 questions * 999 = 9990 < BASE_POINTS.
-const MAX_SPEED_BONUS = 999;
+const MAX_SPEED_BONUS = 99;
 
 interface Item {
   title: string;
