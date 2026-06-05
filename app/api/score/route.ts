@@ -33,6 +33,13 @@ export async function POST(req: Request) {
   const eventId = String(body.eventId ?? "").trim();
   const contactRaw = String(body.contact ?? "").trim();
   const rawScore = Number(body.score);
+  // Optional free-text submission (e.g. story-builder writeups). We always
+  // accept it but only store when it's non-empty and reasonably bounded.
+  const submissionTextRaw =
+    typeof body.submissionText === "string" ? body.submissionText : "";
+  const submissionText = submissionTextRaw
+    ? submissionTextRaw.slice(0, 20000) // hard cap to avoid abuse
+    : null;
 
   if (!gameId || !eventId || !contactRaw) {
     return NextResponse.json(
@@ -102,13 +109,18 @@ export async function POST(req: Request) {
     );
   }
 
-  // component reports the final score; record as-is (rounded), best score wins
+  // component reports the final score; record as-is (rounded), best score wins.
+  // When the score improves, the submission text is replaced too, so the text
+  // the admin sees always matches the score on display.
   const score = Math.round(rawScore);
   const updated = (match.score ?? -1) < score;
   if (updated) {
     await db
       .update(participations)
-      .set({ score })
+      .set({
+        score,
+        ...(submissionText !== null ? { submissionText } : {}),
+      })
       .where(eq(participations.id, match.id));
   }
 

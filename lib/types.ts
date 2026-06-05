@@ -76,6 +76,7 @@ export interface ParticipationModel {
   participantWiki: string | null;
   contactEmail: string | null;
   contactPhone: string | null;
+  submissionText: string | null;
   teamName: string | null;
   role: ParticipantRole;
   score: number | null;

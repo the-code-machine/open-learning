@@ -75,7 +75,10 @@ export default function PlayHost({
     }
   }
 
-  async function recordScore(score: number) {
+  async function recordScore(
+    score: number,
+    payload?: { submissionText?: string },
+  ) {
     setError(null);
     try {
       const res = await fetch("/api/score", {
@@ -86,6 +89,9 @@ export default function PlayHost({
           eventId,
           contact: verifiedContact,
           score,
+          ...(payload?.submissionText
+            ? { submissionText: payload.submissionText }
+            : {}),
         }),
       });
       if (!res.ok) {

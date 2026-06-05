@@ -255,52 +255,62 @@ export default function ParticipationManager({
                   </form>
                 </li>
               ) : (
-                <li
-                  key={r.id}
-                  className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors"
-                >
-                  <span className="w-8 text-center text-sm font-bold text-gray-400">
-                    {r.rank ?? "-"}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 flex items-center gap-1.5">
-                      {r.participantName}
-                      {r.role === "captain" && (
-                        <span className="text-xs text-brand-red font-bold">
-                          (C)
-                        </span>
-                      )}
-                      {r.isWinner && (
-                        <Crown size={14} className="text-yellow-500" />
-                      )}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {[r.participantWiki, r.teamName]
-                        .filter(Boolean)
-                        .join(" · ") || "—"}
-                    </p>
-                  </div>
-                  <span className="text-sm font-bold text-brand-blue w-16 text-right">
-                    {r.score ?? "-"}
-                  </span>
-                  <button
-                    onClick={() => setEditingId(r.id)}
-                    className="p-2 text-gray-400 hover:text-brand-blue transition-colors"
-                    aria-label="Edit"
-                  >
-                    <Pencil size={15} />
-                  </button>
-                  <form action={deleteParticipationAction}>
-                    <input type="hidden" name="id" value={r.id} />
-                    <input type="hidden" name="eventId" value={eventId} />
-                    <input type="hidden" name="gameId" value={game.id} />
+                <li key={r.id} className="hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-3 px-5 py-3">
+                    <span className="w-8 text-center text-sm font-bold text-gray-400">
+                      {r.rank ?? "-"}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 flex items-center gap-1.5">
+                        {r.participantName}
+                        {r.role === "captain" && (
+                          <span className="text-xs text-brand-red font-bold">
+                            (C)
+                          </span>
+                        )}
+                        {r.isWinner && (
+                          <Crown size={14} className="text-yellow-500" />
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {[r.participantWiki, r.teamName]
+                          .filter(Boolean)
+                          .join(" · ") || "—"}
+                      </p>
+                    </div>
+                    <span className="text-sm font-bold text-brand-blue w-16 text-right">
+                      {r.score ?? "-"}
+                    </span>
                     <button
-                      className="p-2 text-gray-400 hover:text-brand-red transition-colors"
-                      aria-label="Delete"
+                      onClick={() => setEditingId(r.id)}
+                      className="p-2 text-gray-400 hover:text-brand-blue transition-colors"
+                      aria-label="Edit"
                     >
-                      <Trash2 size={15} />
+                      <Pencil size={15} />
                     </button>
-                  </form>
+                    <form action={deleteParticipationAction}>
+                      <input type="hidden" name="id" value={r.id} />
+                      <input type="hidden" name="eventId" value={eventId} />
+                      <input type="hidden" name="gameId" value={game.id} />
+                      <button
+                        className="p-2 text-gray-400 hover:text-brand-red transition-colors"
+                        aria-label="Delete"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </form>
+                  </div>
+                  {r.submissionText && (
+                    <details className="mx-5 mb-3 -mt-1">
+                      <summary className="cursor-pointer text-xs font-semibold text-brand-blue hover:text-brand-green inline-flex items-center gap-1">
+                        <Pencil size={12} /> View submission (
+                        {r.submissionText.trim().split(/\s+/).length} words)
+                      </summary>
+                      <pre className="mt-2 p-3 bg-gray-50 border border-gray-100 rounded-lg text-xs leading-relaxed text-gray-700 whitespace-pre-wrap font-sans max-h-64 overflow-y-auto">
+                        {r.submissionText}
+                      </pre>
+                    </details>
+                  )}
                 </li>
               ),
             )}

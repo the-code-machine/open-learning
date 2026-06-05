@@ -5,6 +5,7 @@ import type { GamePlayProps } from "@/lib/game-types";
 import QuizGame from "./QuizGame";
 import RealOrFakeGame from "./RealOrFakeGame";
 import CitationNeededGame from "./CitationNeededGame";
+import Wiki25StoryGame from "./Wiki25storygame";
 
 /**
  * Registry of playable game components.
@@ -25,6 +26,7 @@ export const GAME_REGISTRY: Record<string, RegistryEntry> = {
   "quiz-v1": { Play: QuizGame },
   "real-or-fake-v1": { Play: RealOrFakeGame },
   "citation-needed-v1": { Play: CitationNeededGame },
+  "wiki25-story-v1": { Play: Wiki25StoryGame },
 };
 
 export function getRegistryEntry(key: string): RegistryEntry | null {

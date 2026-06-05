@@ -137,6 +137,10 @@ export const participations = sqliteTable(
     // a score can only be recorded by the real selected person (not by name).
     contactEmail: text("contact_email"),
     contactPhone: text("contact_phone"),
+    // For games that produce free-text submissions (e.g. story builders), the
+    // player's writing is stored here so admins can read it before overriding
+    // the auto-computed score. NULL for games that produce no text.
+    submissionText: text("submission_text"),
     // null for individual games
     teamName: text("team_name"),
     // player | captain
