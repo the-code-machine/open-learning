@@ -17,6 +17,7 @@ import {
   getSelectedRegistrations,
 } from "@/lib/queries";
 import JoinEventForm from "@/components/ui/JoinEventForm";
+import CreateMetaPageCTA from "@/components/CreateMetaPageCTA";
 import {
   ModeBadge,
   StatusBadge,
@@ -317,6 +318,9 @@ export default async function EventDetailsPage({
           </div>
         </div>
       </div>
+
+      {/* Bottom CTA — create-your-Meta-page tool */}
+      <CreateMetaPageCTA eventName={event.title} />
     </div>
   );
 }

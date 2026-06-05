@@ -1,15 +1,23 @@
-import CommunityHub from "@/components/CommunityHub";
 import Hero from "@/components/Hero";
-import JoinCTA from "@/components/JoinCTA";
 import MissionSection from "@/components/MissionSection";
-import Image from "next/image";
+import UpcomingEventsSection from "@/components/UpcomingEventSection";
+import StatsSection from "@/components/StatsSection";
+import HowItWorks from "@/components/HowItsWork";
+import CommunitySection from "@/components/CommunityHub";
+import JoinCTA from "@/components/JoinCTA";
+
+// Pull fresh upcoming-events on every visit so admin additions appear immediately
+export const dynamic = "force-dynamic";
 
 export default function Home() {
   return (
     <>
       <Hero />
       <MissionSection />
-      {/* <CommunityHub /> */}
+      <UpcomingEventsSection />
+      <StatsSection />
+      <HowItWorks />
+      <CommunitySection />
       <JoinCTA />
     </>
   );
