@@ -10,6 +10,9 @@ import {
   Users2,
   Gamepad2,
   Building2,
+  Image as ImageIcon,
+  Link as LinkIcon,
+  ExternalLink,
 } from "lucide-react";
 import {
   getEventDetail,
@@ -210,6 +213,40 @@ export default async function EventDetailsPage({
                 </div>
               </div>
             )}
+
+            {/* Gallery */}
+            {event.gallery.length > 0 && (
+              <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
+                <div className="flex items-center gap-2 mb-6">
+                  <ImageIcon className="text-brand-blue" size={24} />
+                  <h2 className="text-2xl font-bold text-gray-900">Gallery</h2>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {event.gallery.map((img, i) => (
+                    <a
+                      key={i}
+                      href={img.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative aspect-square overflow-hidden rounded-xl bg-gray-100 border border-gray-100 hover:border-brand-blue transition-all"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img.url}
+                        alt={img.caption ?? `Gallery image ${i + 1}`}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      {img.caption && (
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent text-white text-xs p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {img.caption}
+                        </div>
+                      )}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* RIGHT sidebar */}
@@ -312,6 +349,35 @@ export default async function EventDetailsPage({
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* External links */}
+              {event.links.length > 0 && (
+                <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                  <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <LinkIcon size={18} /> Useful links
+                  </h3>
+                  <ul className="space-y-2">
+                    {event.links.map((l, i) => (
+                      <li key={i}>
+                        <a
+                          href={l.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group flex items-center gap-2 text-sm text-gray-700 hover:text-brand-blue transition-colors py-1.5"
+                        >
+                          <ExternalLink
+                            size={14}
+                            className="text-gray-300 group-hover:text-brand-blue shrink-0"
+                          />
+                          <span className="font-semibold truncate flex-1">
+                            {l.name || l.url}
+                          </span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>

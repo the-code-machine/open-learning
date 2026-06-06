@@ -40,6 +40,10 @@ export const events = sqliteTable("events", {
   facilitators: text("facilitators").notNull().default("[]"),
   // organisers: [{ name, role?, contact? }]
   organisers: text("organisers").notNull().default("[]"),
+  // gallery: JSON array of { url, caption? } shown as image grid on event page
+  gallery: text("gallery").notNull().default("[]"),
+  // links: JSON array of { name, url } external link objects shown on event page
+  links: text("links").notNull().default("[]"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

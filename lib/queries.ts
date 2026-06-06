@@ -22,6 +22,8 @@ import type {
   TimelineItem,
   Facilitator,
   Organiser,
+  GalleryImage,
+  EventLink,
   RuleItem,
 } from "./types";
 import type { EventRow, GameRow, RegistrationRow } from "@/db/schema";
@@ -65,6 +67,8 @@ function mapEvent(row: EventRow): EventModel {
     timeline: safeParse<TimelineItem[]>(row.timeline, []),
     facilitators: safeParse<Facilitator[]>(row.facilitators, []),
     organisers: safeParse<Organiser[]>(row.organisers, []),
+    gallery: safeParse<GalleryImage[]>(row.gallery, []),
+    links: safeParse<EventLink[]>(row.links, []),
     createdAt: row.createdAt,
   };
 }

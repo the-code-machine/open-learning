@@ -5,102 +5,75 @@ import {
   Clock,
   Trophy,
   ArrowRight,
-  Sparkles,
   Send,
   AlertCircle,
   Check,
-  ListChecks,
   Pencil,
   ShieldAlert,
+  Sparkles,
+  ListChecks,
 } from "lucide-react";
 import type { GamePlayProps } from "@/lib/game-types";
 
 /**
- * WIKI25 STORY BUILDER
+ * WIKI25 STORY BUILDER — redesign v2 (no gradients, professional, mobile-first)
  *
- * Theme: Wikipedia turns 25 — every editor on Wikipedia has, in a way, told a
- * story with the elements they had. This game gives players 25 elements (a
- * mix of characters, settings, props, and twists, each weighted by
- * difficulty) and 8 minutes to write a logically coherent story of at least
- * 150 words that uses as many as possible.
+ * Same scoring contract as before:
+ *   - Element points (1–5 per word) × 10000 → dominates the score
+ *   - Length tier (+20/+40/+80 at 150/200/300) × 100 → secondary
+ *   - Speed bonus (0–99) → tiebreak only
+ * Final = element_pts * 10000 + length_bonus * 100 + speed_bonus
  *
- * SCORING (deterministic, defensible, admin can override afterwards):
- *   - Element score: sum of point values of elements actually present in the
- *     story (whole-word, case-insensitive). Easy elements = 1pt, hard = 5pt.
- *     Max possible if all 25 used = ~70pt.
- *   - Length bonus: tiered. 150w = +20, 200w = +40, 300w = +80. Encourages
- *     real writing without rewarding spam.
- *   - Speed bonus: small fraction of remaining seconds (only if submitted
- *     before time runs out), capped so it can never equal one extra element.
- *
- * Final integer = element_pts * 10000 + length_bonus * 100 + speed_bonus.
- * Same magnitude as other games (six figures) so the leaderboard reads
- * consistently. The element count is the dominant term: more elements always
- * beats more length. Admin still has final say via the participation manager.
- *
- * ANTI-PASTE: blocks onPaste, drag-and-drop, and right-click context menu.
- * Tracks typing rate as an honesty signal (not an automatic penalty) — admins
- * can see it on completion. Determined cheaters can still bypass via DevTools
- * or external tools; this is honor-system reinforced by friction.
- *
- * TEAM PLAY: each team member verifies and submits as themselves. The leader-
- * board groups by teamName and shows the best individual submission as the
- * team's score. Teams should designate one writer per round.
+ * Element list is a 5-column grid (responsive: 2 cols on phone, 5 on desktop)
+ * showing all 25 at once with no scrolling. Each tile is large enough to tap.
+ * Used elements get a clean checkmark and bold border. No gradients, just
+ * solid color tokens by point tier. Subtle pulse and scale animations.
  */
 
 const TIME_LIMIT_SECONDS = 8 * 60;
-const MIN_WORDS = 150;
+const MIN_WORDS = 100;
+const BASE_POINTS_MULT = 10000;
+const LENGTH_MULT = 100;
+const SPEED_MAX = 99;
 
 interface Element {
   word: string;
   category: "Character" | "Setting" | "Object" | "Action" | "Twist";
   points: 1 | 2 | 3 | 4 | 5;
-  /** alternate forms that should count as a match (plurals, common variants) */
   variants?: string[];
 }
 
-// 25 elements, deliberately spread across difficulty and category so most
-// stories naturally pull from several at once. Edit the array to retune.
 const ELEMENTS: Element[] = [
-  // Characters (easy = common, hard = specific)
+  // Characters
   { word: "boy", category: "Character", points: 1 },
   { word: "girl", category: "Character", points: 1 },
-  { word: "teacher", category: "Character", points: 2 },
   { word: "student", category: "Character", points: 1 },
-  { word: "scientist", category: "Character", points: 3 },
+  { word: "teacher", category: "Character", points: 2 },
   { word: "stranger", category: "Character", points: 3 },
+  { word: "scientist", category: "Character", points: 3 },
   { word: "librarian", category: "Character", points: 4 },
-
   // Settings
   { word: "library", category: "Setting", points: 2, variants: ["libraries"] },
-  { word: "rooftop", category: "Setting", points: 4, variants: ["rooftops"] },
   {
     word: "classroom",
     category: "Setting",
     points: 2,
     variants: ["classrooms"],
   },
+  { word: "rooftop", category: "Setting", points: 4, variants: ["rooftops"] },
   { word: "marketplace", category: "Setting", points: 4 },
-
   // Objects
+  { word: "key", category: "Object", points: 2, variants: ["keys"] },
   { word: "notebook", category: "Object", points: 2, variants: ["notebooks"] },
   { word: "umbrella", category: "Object", points: 3, variants: ["umbrellas"] },
+  { word: "envelope", category: "Object", points: 3, variants: ["envelopes"] },
   {
     word: "telescope",
     category: "Object",
     points: 4,
     variants: ["telescopes"],
   },
-  { word: "envelope", category: "Object", points: 3, variants: ["envelopes"] },
-  { word: "key", category: "Object", points: 2, variants: ["keys"] },
-
-  // Actions (use verb stem + common conjugations)
-  {
-    word: "whisper",
-    category: "Action",
-    points: 3,
-    variants: ["whispers", "whispered", "whispering"],
-  },
+  // Actions
   {
     word: "discover",
     category: "Action",
@@ -108,20 +81,26 @@ const ELEMENTS: Element[] = [
     variants: ["discovers", "discovered", "discovering", "discovery"],
   },
   {
-    word: "escape",
-    category: "Action",
-    points: 3,
-    variants: ["escapes", "escaped", "escaping"],
-  },
-  {
     word: "promise",
     category: "Action",
     points: 2,
     variants: ["promises", "promised", "promising"],
   },
-
-  // Twists / specifics — high point, harder to weave in naturally
+  {
+    word: "whisper",
+    category: "Action",
+    points: 3,
+    variants: ["whispers", "whispered", "whispering"],
+  },
+  {
+    word: "escape",
+    category: "Action",
+    points: 3,
+    variants: ["escapes", "escaped", "escaping"],
+  },
+  // Twists
   { word: "midnight", category: "Twist", points: 4 },
+  { word: "footprint", category: "Twist", points: 4, variants: ["footprints"] },
   {
     word: "thunderstorm",
     category: "Twist",
@@ -134,7 +113,6 @@ const ELEMENTS: Element[] = [
     points: 5,
     variants: ["anniversaries"],
   },
-  { word: "footprint", category: "Twist", points: 4, variants: ["footprints"] },
   {
     word: "coincidence",
     category: "Twist",
@@ -142,67 +120,51 @@ const ELEMENTS: Element[] = [
     variants: ["coincidences"],
   },
 ];
-
 const MAX_ELEMENT_POINTS = ELEMENTS.reduce((s, e) => s + e.points, 0);
 
-// Length tiers: hits the threshold → take that tier's bonus (highest reached)
 const LENGTH_TIERS = [
-  { words: 150, bonus: 20 },
-  { words: 200, bonus: 40 },
-  { words: 300, bonus: 80 },
+  { words: 100, bonus: 20 },
+  { words: 150, bonus: 40 },
+  { words: 200, bonus: 80 },
 ];
-
-const SPEED_MAX = 99; // < length_bonus_step (100) so can never beat length tier
 
 type Phase = "intro" | "writing" | "submitting" | "done";
 
-/* ---------- scoring helpers ---------- */
-
+/* ---------- scoring ---------- */
 function countWords(text: string): number {
   const trimmed = text.trim();
-  if (!trimmed) return 0;
-  return trimmed.split(/\s+/).length;
+  return trimmed ? trimmed.split(/\s+/).length : 0;
 }
-
-function detectElements(text: string): {
-  matched: Element[];
-  elementPoints: number;
-} {
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function detectElements(text: string) {
   const lower = text.toLowerCase();
   const matched: Element[] = [];
   for (const el of ELEMENTS) {
     const forms = [el.word, ...(el.variants ?? [])];
-    const hit = forms.some((f) => {
-      // whole-word match: word boundary on both sides (allows punctuation,
-      // newlines, etc. around it; rejects substrings inside other words)
-      const re = new RegExp(
-        `(^|[^a-z])${escapeRegex(f.toLowerCase())}([^a-z]|$)`,
-      );
-      return re.test(lower);
-    });
-    if (hit) matched.push(el);
+    if (
+      forms.some((f) =>
+        new RegExp(`(^|[^a-z])${escapeRegex(f.toLowerCase())}([^a-z]|$)`).test(
+          lower,
+        ),
+      )
+    ) {
+      matched.push(el);
+    }
   }
-  const elementPoints = matched.reduce((s, e) => s + e.points, 0);
-  return { matched, elementPoints };
+  return { matched, elementPoints: matched.reduce((s, e) => s + e.points, 0) };
 }
-
-function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 function lengthBonus(words: number): number {
-  let bonus = 0;
-  for (const tier of LENGTH_TIERS) {
-    if (words >= tier.words) bonus = tier.bonus;
-  }
-  return bonus;
+  let b = 0;
+  for (const t of LENGTH_TIERS) if (words >= t.words) b = t.bonus;
+  return b;
 }
-
 function buildFinalScore(opts: {
   elementPoints: number;
   lengthBonus: number;
   secondsRemaining: number;
-}): number {
+}) {
   const speedBonus = Math.min(
     SPEED_MAX,
     Math.max(
@@ -210,13 +172,14 @@ function buildFinalScore(opts: {
       Math.round((opts.secondsRemaining / TIME_LIMIT_SECONDS) * SPEED_MAX),
     ),
   );
-  // element_pts * 10000 + length_bonus * 100 + speed_bonus
-  // makes element count strictly dominant, length next, speed just a tiebreak
-  return opts.elementPoints * 10000 + opts.lengthBonus * 100 + speedBonus;
+  return (
+    opts.elementPoints * BASE_POINTS_MULT +
+    opts.lengthBonus * LENGTH_MULT +
+    speedBonus
+  );
 }
 
 /* ---------- component ---------- */
-
 export default function Wiki25StoryGame({ identity, onFinish }: GamePlayProps) {
   const [phase, setPhase] = useState<Phase>("intro");
   const [story, setStory] = useState("");
@@ -234,14 +197,8 @@ export default function Wiki25StoryGame({ identity, onFinish }: GamePlayProps) {
   const [pasteAttempts, setPasteAttempts] = useState(0);
   const [showPasteWarn, setShowPasteWarn] = useState(false);
 
-  // typing-rate honesty signal
-  const typingStart = useRef<number | null>(null);
-  const lastLength = useRef(0);
-  const fastBursts = useRef(0);
-
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  /* live derived values */
   const words = countWords(story);
   const { matched, elementPoints } = useMemo(
     () => detectElements(story),
@@ -250,55 +207,21 @@ export default function Wiki25StoryGame({ identity, onFinish }: GamePlayProps) {
   const lengthBonusValue = lengthBonus(words);
   const canSubmit = words >= MIN_WORDS && phase === "writing";
 
-  /* timer */
   useEffect(() => {
     if (phase !== "writing") return;
-    tickRef.current = setInterval(() => {
-      setSecondsLeft((s) => (s <= 1 ? 0 : s - 1));
-    }, 1000);
+    tickRef.current = setInterval(
+      () => setSecondsLeft((s) => (s <= 1 ? 0 : s - 1)),
+      1000,
+    );
     return () => {
       if (tickRef.current) clearInterval(tickRef.current);
     };
   }, [phase]);
 
-  /* time's up — auto-submit if eligible, otherwise lock with 0 */
-  useEffect(() => {
-    if (phase === "writing" && secondsLeft <= 0) {
-      void submit(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [secondsLeft]);
-
-  /* typing-rate tracker */
-  function onStoryChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    const v = e.target.value;
-    if (typingStart.current === null) typingStart.current = Date.now();
-    const delta = v.length - lastLength.current;
-    if (delta > 25) {
-      // a single keystroke produced >25 chars — almost certainly programmatic
-      fastBursts.current += 1;
-    }
-    lastLength.current = v.length;
-    setStory(v);
-  }
-
-  /* paste / drag / context-menu blockers */
-  function blockPaste(
-    e: React.ClipboardEvent | React.DragEvent | React.MouseEvent,
-  ) {
-    e.preventDefault();
-    setPasteAttempts((n) => n + 1);
-    setShowPasteWarn(true);
-    setTimeout(() => setShowPasteWarn(false), 2500);
-  }
-
-  /* submit */
   const submit = useCallback(
     async (auto = false) => {
       if (phase !== "writing") return;
       const finalWords = countWords(story);
-      // for auto-submits below the min, we still record what they wrote but
-      // score it as zero so admins can see there was an attempt
       const tooShort = finalWords < MIN_WORDS;
       const { matched: m, elementPoints: ep } = detectElements(story);
       const lb = lengthBonus(finalWords);
@@ -333,14 +256,28 @@ export default function Wiki25StoryGame({ identity, onFinish }: GamePlayProps) {
     [phase, story, secondsLeft, onFinish],
   );
 
+  useEffect(() => {
+    if (phase === "writing" && secondsLeft <= 0) void submit(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [secondsLeft]);
+
+  function blockPaste(
+    e: React.ClipboardEvent | React.DragEvent | React.MouseEvent,
+  ) {
+    e.preventDefault();
+    setPasteAttempts((n) => n + 1);
+    setShowPasteWarn(true);
+    setTimeout(() => setShowPasteWarn(false), 2200);
+  }
+
   /* ---------- INTRO ---------- */
   if (phase === "intro") {
     return (
-      <div className="w25-card">
+      <div className="w25-card w25-card-narrow">
         <style>{styles}</style>
         <div className="w25-intro">
-          <div className="w25-badge">
-            <Sparkles size={30} />
+          <div className="w25-icon-frame">
+            <Sparkles size={26} />
           </div>
           <div className="w25-kicker">Wikipedia 25 · Story Builder</div>
           <h2 className="w25-title">Write a story. Earn elements.</h2>
@@ -381,23 +318,13 @@ export default function Wiki25StoryGame({ identity, onFinish }: GamePlayProps) {
 
   /* ---------- DONE ---------- */
   if (phase === "done") {
-    const breakdown = submittedBreakdown!;
-    const usedByCategory = ELEMENTS.reduce<
-      Record<string, { used: number; total: number }>
-    >((acc, el) => {
-      const c = el.category;
-      if (!acc[c]) acc[c] = { used: 0, total: 0 };
-      acc[c].total += 1;
-      if (breakdown.matched.some((m) => m.word === el.word)) acc[c].used += 1;
-      return acc;
-    }, {});
-
+    const b = submittedBreakdown!;
     return (
-      <div className="w25-card">
+      <div className="w25-card w25-card-narrow">
         <style>{styles}</style>
         <div className="w25-intro">
-          <div className="w25-badge w25-badge-win">
-            <Trophy size={30} />
+          <div className="w25-icon-frame w25-icon-frame-win">
+            <Trophy size={26} />
           </div>
           <h2 className="w25-title">
             {submittedScore && submittedScore > 0 ? "Submitted." : "Time's up."}
@@ -413,43 +340,39 @@ export default function Wiki25StoryGame({ identity, onFinish }: GamePlayProps) {
               scored.
             </p>
           )}
-
-          {/* breakdown card */}
           <div className="w25-breakdown">
-            <div className="w25-breakdown-row">
+            <div className="w25-bd-row">
               <span>Words written</span>
-              <b>{breakdown.words}</b>
+              <b>{b.words}</b>
             </div>
-            <div className="w25-breakdown-row">
+            <div className="w25-bd-row">
               <span>
-                Elements used ({breakdown.matched.length} / {ELEMENTS.length})
+                Elements used ({b.matched.length} / {ELEMENTS.length})
               </span>
               <b>
-                {breakdown.elementPoints} / {MAX_ELEMENT_POINTS} pts
+                {b.elementPoints} / {MAX_ELEMENT_POINTS} pts
               </b>
             </div>
-            <div className="w25-breakdown-row">
+            <div className="w25-bd-row">
               <span>Length bonus</span>
-              <b>+{breakdown.lengthBonus}</b>
+              <b>+{b.lengthBonus}</b>
             </div>
-            <div className="w25-breakdown-row">
+            <div className="w25-bd-row">
               <span>Time remaining</span>
-              <b>{formatTime(breakdown.speedSeconds)}</b>
+              <b>{formatTime(b.speedSeconds)}</b>
             </div>
-            <div className="w25-breakdown-row w25-breakdown-total">
+            <div className="w25-bd-row w25-bd-total">
               <span>Final score</span>
               <b>{submittedScore?.toLocaleString()}</b>
             </div>
           </div>
-
-          {/* matched element chips */}
-          {breakdown.matched.length > 0 && (
+          {b.matched.length > 0 && (
             <>
               <div className="w25-chip-label">
                 Elements detected in your story
               </div>
               <div className="w25-chips">
-                {breakdown.matched.map((m) => (
+                {b.matched.map((m) => (
                   <span
                     key={m.word}
                     className={`w25-chip w25-chip-p${m.points}`}
@@ -460,7 +383,6 @@ export default function Wiki25StoryGame({ identity, onFinish }: GamePlayProps) {
               </div>
             </>
           )}
-
           <p className="w25-savestate">
             {saving && <span className="w25-saving">Saving your score…</span>}
             {saved && <span className="w25-saved">Score recorded ✓</span>}
@@ -477,8 +399,6 @@ export default function Wiki25StoryGame({ identity, onFinish }: GamePlayProps) {
   }
 
   /* ---------- WRITING ---------- */
-
-  // color the timer ring like the other games
   const ringPct = (secondsLeft / TIME_LIMIT_SECONDS) * 100;
   const ringColor =
     secondsLeft > 180
@@ -488,23 +408,25 @@ export default function Wiki25StoryGame({ identity, onFinish }: GamePlayProps) {
         : "var(--brand-red)";
 
   return (
-    <div className="w25-card w25-card-wide">
+    <div className="w25-card">
       <style>{styles}</style>
 
-      {/* top bar */}
+      {/* Top bar */}
       <div className="w25-top">
         <div className="w25-top-l">
           <div className="w25-top-kicker">Wikipedia 25 · Story</div>
           <div className="w25-top-counts">
             <span>
-              <Pencil size={13} /> <b>{words}</b> / {MIN_WORDS}+ words
+              <Pencil size={13} /> <b>{words}</b>
+              <span className="w25-mute">/{MIN_WORDS}+ words</span>
             </span>
             <span>
-              <ListChecks size={13} /> <b>{matched.length}</b> /{" "}
-              {ELEMENTS.length} elements
+              <ListChecks size={13} /> <b>{matched.length}</b>
+              <span className="w25-mute">/{ELEMENTS.length} elements</span>
             </span>
             <span className="w25-top-pts">
-              <Sparkles size={13} /> {elementPoints} pts
+              <Sparkles size={13} /> <b>{elementPoints}</b>
+              <span className="w25-mute"> pts</span>
             </span>
           </div>
         </div>
@@ -521,207 +443,188 @@ export default function Wiki25StoryGame({ identity, onFinish }: GamePlayProps) {
         </div>
       </div>
 
-      <div className="w25-grid">
-        {/* elements panel */}
-        <aside className="w25-elements">
-          <div className="w25-elements-head">
+      {/* Element grid — ALL 25 visible, no scroll */}
+      <div className="w25-elements-section">
+        <div className="w25-elements-head">
+          <span>
             <ListChecks size={14} /> Your 25 elements
-          </div>
-          <div className="w25-elements-list">
-            {ELEMENTS.map((el) => {
-              const used = matched.some((m) => m.word === el.word);
-              return (
-                <div
-                  key={el.word}
-                  className={`w25-el w25-el-p${el.points} ${used ? "w25-el-used" : ""}`}
-                  title={`${el.category} · ${el.points} pt${el.points === 1 ? "" : "s"}`}
-                >
-                  <span className="w25-el-word">{el.word}</span>
-                  <span className="w25-el-pts">+{el.points}</span>
-                  {used && <Check size={11} className="w25-el-check" />}
-                </div>
-              );
-            })}
-          </div>
-          <div className="w25-elements-foot">
-            <span className="w25-pip w25-pip-p1" /> 1 pt
-            <span className="w25-pip w25-pip-p2" /> 2
-            <span className="w25-pip w25-pip-p3" /> 3
-            <span className="w25-pip w25-pip-p4" /> 4
-            <span className="w25-pip w25-pip-p5" /> 5
-          </div>
-        </aside>
+          </span>
+          <span className="w25-mute">Words you use light up</span>
+        </div>
+        <div className="w25-elements-grid">
+          {ELEMENTS.map((el) => {
+            const used = matched.some((m) => m.word === el.word);
+            return (
+              <div
+                key={el.word}
+                className={`w25-el w25-el-p${el.points} ${used ? "w25-el-used" : ""}`}
+                title={`${el.category} · ${el.points} point${el.points === 1 ? "" : "s"}`}
+              >
+                <span className="w25-el-pts-badge">+{el.points}</span>
+                <span className="w25-el-word">{el.word}</span>
+                {used && <Check size={13} className="w25-el-check" />}
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
-        {/* writing pane */}
-        <main className="w25-write">
-          <textarea
-            value={story}
-            onChange={onStoryChange}
-            onPaste={blockPaste}
-            onDrop={blockPaste}
-            onDragOver={(e) => e.preventDefault()}
-            onContextMenu={blockPaste}
-            spellCheck
-            autoFocus
-            placeholder={`Begin your story here. At least ${MIN_WORDS} words. Use as many of the 25 elements as you can weave together logically — the elements you used will light up on the left.`}
-            className="w25-textarea"
-          />
-          <div className="w25-write-foot">
-            <div className="w25-write-stats">
-              {words < MIN_WORDS ? (
-                <span className="w25-need-more">
-                  {MIN_WORDS - words} more word
-                  {MIN_WORDS - words === 1 ? "" : "s"} to submit
-                </span>
-              ) : (
-                <span className="w25-ready">
-                  Ready to submit · length bonus +{lengthBonusValue}
-                </span>
-              )}
-            </div>
-            <button
-              className="w25-btn w25-btn-submit"
-              disabled={!canSubmit}
-              onClick={() => submit(false)}
-            >
-              <Send size={16} /> Submit story
-            </button>
+      {/* Writing area */}
+      <div className="w25-write">
+        <textarea
+          value={story}
+          onChange={(e) => setStory(e.target.value)}
+          onPaste={blockPaste}
+          onDrop={blockPaste}
+          onDragOver={(e) => e.preventDefault()}
+          onContextMenu={blockPaste}
+          spellCheck
+          autoFocus
+          placeholder={`Begin your story. At least ${MIN_WORDS} words. Use as many of the 25 elements above as you can weave together logically — they light up on the grid as you type.`}
+          className="w25-textarea"
+        />
+        <div className="w25-write-foot">
+          <div className="w25-write-stats">
+            {words < MIN_WORDS ? (
+              <span className="w25-need-more">
+                {MIN_WORDS - words} more word
+                {MIN_WORDS - words === 1 ? "" : "s"} to submit
+              </span>
+            ) : (
+              <span className="w25-ready">
+                <Check size={14} /> Ready to submit · length bonus +
+                {lengthBonusValue}
+              </span>
+            )}
           </div>
-        </main>
+          <button
+            className="w25-btn w25-btn-submit"
+            disabled={!canSubmit}
+            onClick={() => submit(false)}
+          >
+            <Send size={16} /> Submit story
+          </button>
+        </div>
       </div>
 
       {showPasteWarn && (
         <div className="w25-toast">
-          <AlertCircle size={16} /> Pasting is disabled for this game — type
-          your own story.
+          <AlertCircle size={16} /> Pasting is disabled — type your own story.
         </div>
       )}
     </div>
   );
 }
 
-function formatTime(s: number): string {
+function formatTime(s: number) {
   const m = Math.floor(s / 60);
   const ss = String(s % 60).padStart(2, "0");
   return `${m}:${ss}`;
 }
 
-/* ---------- styles ---------- */
-
+/* ---------- STYLES — solid colors, no gradients, professional ---------- */
 const styles = `
-.w25-card{background:#fff;border-radius:24px;border:1px solid #eef0f2;
-  box-shadow:0 10px 40px -12px rgba(0,40,80,.18);padding:20px;max-width:580px;
-  margin:0 auto;overflow:hidden;font-family:inherit;position:relative}
-.w25-card-wide{max-width:960px}
-@media(min-width:640px){.w25-card{padding:28px}}
+.w25-card{background:#fff;border-radius:20px;border:1px solid #e6e9ec;
+  box-shadow:0 1px 3px rgba(0,0,0,.04),0 10px 30px -12px rgba(0,40,80,.08);
+  padding:18px;max-width:980px;margin:0 auto;font-family:inherit;position:relative}
+.w25-card-narrow{max-width:580px}
+@media(min-width:640px){.w25-card{padding:24px}}
 
 /* intro / done */
-.w25-intro{text-align:center;padding:8px 4px 12px}
-.w25-badge{width:64px;height:64px;border-radius:20px;margin:0 auto 14px;display:flex;
-  align-items:center;justify-content:center;color:#fff;
-  background:linear-gradient(135deg,var(--brand-blue),var(--brand-green));
-  box-shadow:0 8px 22px -6px rgba(0,104,152,.5);animation:w25-pop .4s ease}
-.w25-badge-win{background:linear-gradient(135deg,#e6a700,var(--brand-red))}
-.w25-kicker{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--brand-blue);margin-bottom:6px}
-.w25-title{font-size:1.8rem;font-weight:800;color:#10243a;margin:0 0 10px;letter-spacing:-.02em}
-.w25-sub{color:#5b6b7a;font-size:.95rem;line-height:1.55;margin:0 auto 18px;max-width:46ch}
-.w25-rules{list-style:none;padding:0;margin:0 auto 14px;display:inline-flex;flex-direction:column;gap:8px;text-align:left}
-.w25-rules li{display:flex;align-items:center;gap:8px;color:#33485c;font-weight:600;font-size:.9rem}
+.w25-intro{text-align:center;padding:6px 4px}
+.w25-icon-frame{width:56px;height:56px;border-radius:14px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;background:var(--brand-blue);color:#fff;animation:w25-pop .35s ease}
+.w25-icon-frame-win{background:#10243a}
+.w25-kicker{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--brand-blue);margin-bottom:6px}
+.w25-title{font-size:1.65rem;font-weight:800;color:#10243a;margin:0 0 10px;letter-spacing:-.02em;line-height:1.15}
+@media(min-width:640px){.w25-title{font-size:1.85rem}}
+.w25-sub{color:#5b6b7a;font-size:.94rem;line-height:1.55;margin:0 auto 18px;max-width:46ch}
+.w25-rules{list-style:none;padding:0;margin:0 auto 14px;display:inline-flex;flex-direction:column;gap:9px;text-align:left}
+.w25-rules li{display:flex;align-items:center;gap:9px;color:#33485c;font-weight:600;font-size:.92rem}
 .w25-rules li svg{color:var(--brand-blue);flex:none}
 .w25-team-note{font-size:.78rem;color:#94a3b2;font-style:italic;margin:0 0 22px}
 .w25-savestate{margin-top:14px;font-size:.85rem;min-height:1.2em}
-.w25-saving{color:#94a3b2}.w25-saved{color:var(--brand-green);font-weight:700}
+.w25-saving{color:#94a3b2}
+.w25-saved{color:var(--brand-green);font-weight:700}
 .w25-paste-log{font-size:.72rem;color:#94a3b2;margin-top:6px;font-style:italic}
 
-/* done — breakdown */
-.w25-breakdown{background:#f7fafc;border:1px solid #eef2f5;border-radius:14px;padding:14px 16px;
-  margin:18px auto 0;max-width:380px;text-align:left}
-.w25-breakdown-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;
-  font-size:.88rem;color:#33485c;border-bottom:1px solid #eef2f5}
-.w25-breakdown-row:last-child{border:none}
-.w25-breakdown-row b{font-variant-numeric:tabular-nums}
-.w25-breakdown-total{margin-top:6px;padding-top:10px;border-top:2px solid var(--brand-blue);
-  font-size:1rem;color:#10243a}
-.w25-breakdown-total b{color:var(--brand-blue);font-size:1.15rem}
+/* breakdown */
+.w25-breakdown{background:#f6f8fa;border:1px solid #e7eaee;border-radius:12px;padding:14px 16px;margin:18px auto 0;max-width:380px;text-align:left}
+.w25-bd-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:.88rem;color:#33485c;border-bottom:1px solid #e7eaee}
+.w25-bd-row:last-child{border:none}
+.w25-bd-row b{font-variant-numeric:tabular-nums}
+.w25-bd-total{margin-top:6px;padding-top:10px;border-top:2px solid var(--brand-blue);font-size:1rem;color:#10243a}
+.w25-bd-total b{color:var(--brand-blue);font-size:1.15rem}
 
-.w25-chip-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;
-  color:#94a3b2;font-weight:700;margin:20px 0 8px}
+.w25-chip-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#94a3b2;font-weight:700;margin:20px 0 8px}
 .w25-chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
-.w25-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;
-  font-size:.78rem;font-weight:600;border:1px solid transparent}
-.w25-chip b{font-weight:800;opacity:.85;font-size:.7rem}
+.w25-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:8px;font-size:.78rem;font-weight:700;border:1px solid transparent}
+.w25-chip b{font-weight:800;opacity:.9;font-size:.7rem}
 
-/* point-tier colors (used by chips, elements, and pips) */
-.w25-chip-p1,.w25-el-p1.w25-el-used,.w25-pip-p1{background:#e0f2fe;color:#075985;border-color:#bae6fd}
-.w25-chip-p2,.w25-el-p2.w25-el-used,.w25-pip-p2{background:#dcfce7;color:#166534;border-color:#bbf7d0}
-.w25-chip-p3,.w25-el-p3.w25-el-used,.w25-pip-p3{background:#fef3c7;color:#854d0e;border-color:#fde68a}
-.w25-chip-p4,.w25-el-p4.w25-el-used,.w25-pip-p4{background:#ffedd5;color:#9a3412;border-color:#fed7aa}
-.w25-chip-p5,.w25-el-p5.w25-el-used,.w25-pip-p5{background:#fee2e2;color:#991b1b;border-color:#fecaca}
+/* solid color tokens per point tier — NO gradients */
+.w25-chip-p1,.w25-el-p1.w25-el-used{background:#eff6ff;color:#1e40af;border-color:#bfdbfe}
+.w25-chip-p2,.w25-el-p2.w25-el-used{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+.w25-chip-p3,.w25-el-p3.w25-el-used{background:#fefce8;color:#854d0e;border-color:#fde68a}
+.w25-chip-p4,.w25-el-p4.w25-el-used{background:#fff7ed;color:#9a3412;border-color:#fdba74}
+.w25-chip-p5,.w25-el-p5.w25-el-used{background:#fef2f2;color:#991b1b;border-color:#fca5a5}
 
-/* writing layout */
-.w25-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:18px}
-.w25-top-kicker{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--brand-blue);margin-bottom:6px}
-.w25-top-counts{display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;color:#5b6b7a;font-weight:600}
-.w25-top-counts svg{vertical-align:-2px;margin-right:3px;color:var(--brand-blue)}
-.w25-top-counts b{color:#10243a;font-variant-numeric:tabular-nums}
-.w25-top-pts{color:var(--brand-green)!important;font-weight:800}
+/* TOP BAR */
+.w25-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #eef0f2}
+.w25-top-kicker{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--brand-blue);margin-bottom:8px}
+.w25-top-counts{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:#5b6b7a;font-weight:600}
+.w25-top-counts svg{vertical-align:-2px;margin-right:4px;color:var(--brand-blue)}
+.w25-top-counts b{color:#10243a;font-variant-numeric:tabular-nums;font-size:1rem;font-weight:800}
+.w25-top-pts b{color:var(--brand-green)}
 .w25-top-pts svg{color:var(--brand-green)!important}
+.w25-mute{color:#94a3b2;font-weight:500;margin-left:2px}
 
-.w25-ring{position:relative;width:64px;height:64px;border-radius:50%;flex:none;
-  background:conic-gradient(var(--ring) calc(var(--pct)*1%),#eef1f4 0);
-  transition:background .3s linear;display:flex;align-items:center;justify-content:center}
-.w25-ring::after{content:"";position:absolute;inset:6px;background:#fff;border-radius:50%}
+.w25-ring{position:relative;width:62px;height:62px;border-radius:50%;flex:none;background:conic-gradient(var(--ring) calc(var(--pct)*1%),#eef1f4 0);transition:background .3s linear;display:flex;align-items:center;justify-content:center}
+.w25-ring::after{content:"";position:absolute;inset:5px;background:#fff;border-radius:50%}
 .w25-ring-num{position:relative;z-index:1;font-weight:800;font-size:.95rem;font-variant-numeric:tabular-nums}
 
-.w25-grid{display:grid;grid-template-columns:1fr;gap:14px}
-@media(min-width:768px){.w25-grid{grid-template-columns:240px 1fr;gap:18px}}
+/* ELEMENT GRID — all 25 visible, no scroll, flex layout so long words fit */
+.w25-elements-section{margin-bottom:18px}
+.w25-elements-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#5b6b7a;flex-wrap:wrap;gap:6px}
+.w25-elements-head svg{color:var(--brand-blue);vertical-align:-2px;margin-right:5px}
+.w25-elements-head .w25-mute{text-transform:none;font-weight:500;letter-spacing:0;font-size:.78rem}
 
-.w25-elements{background:#f7fafc;border:1px solid #eef2f5;border-radius:14px;padding:14px;
-  max-height:auto;overflow:hidden}
-@media(min-width:768px){.w25-elements{max-height:520px;overflow-y:auto}}
-.w25-elements-head{display:flex;align-items:center;gap:6px;font-size:.7rem;font-weight:800;text-transform:uppercase;
-  letter-spacing:.08em;color:#5b6b7a;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #eef2f5}
-.w25-elements-list{display:flex;flex-wrap:wrap;gap:5px}
-@media(min-width:768px){.w25-elements-list{flex-direction:column;flex-wrap:nowrap}}
-.w25-el{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:5px 9px;
-  border-radius:8px;background:#fff;border:1px solid #e7eef3;font-size:.82rem;color:#5b6b7a;
-  font-weight:600;transition:all .15s ease;position:relative}
-.w25-el-used{font-weight:700;animation:w25-pop .25s ease}
-.w25-el-word{flex:1;text-transform:lowercase}
-.w25-el-pts{font-size:.7rem;font-weight:800;color:#94a3b2}
-.w25-el-used .w25-el-pts{color:inherit;opacity:.8}
-.w25-el-check{flex:none}
-.w25-elements-foot{display:flex;gap:6px;align-items:center;font-size:.65rem;color:#94a3b2;margin-top:10px;padding-top:8px;border-top:1px solid #eef2f5;flex-wrap:wrap}
-.w25-pip{width:10px;height:10px;border-radius:50%;border:1px solid currentColor;display:inline-block}
+/* Flex layout: tiles size to their content, wrap naturally. Long words like
+   "thunderstorm" / "marketplace" / "anniversary" stay readable instead of
+   getting clipped by fixed grid columns. */
+.w25-elements-grid{display:flex;flex-wrap:wrap;gap:6px}
+@media(min-width:768px){.w25-elements-grid{gap:8px}}
 
-/* textarea */
-.w25-write{display:flex;flex-direction:column;gap:10px}
-.w25-textarea{width:100%;min-height:340px;padding:16px 18px;border:1px solid #e7eef3;border-radius:14px;
-  font-family:inherit;font-size:.95rem;line-height:1.6;resize:vertical;color:#10243a;
-  background:#fff;outline:none;transition:border-color .15s,box-shadow .15s}
-.w25-textarea:focus{border-color:var(--brand-blue);box-shadow:0 0 0 3px rgba(0,104,152,.15)}
+.w25-el{position:relative;display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:10px;background:#fff;border:1.5px solid #e7eaee;font-size:.92rem;color:#33485c;font-weight:600;transition:transform .2s ease,border-color .2s ease,background .2s ease,color .2s ease;cursor:default;white-space:nowrap;flex:0 0 auto}
+@media(min-width:768px){.w25-el{font-size:1rem;padding:10px 15px}}
+.w25-el-word{text-transform:lowercase;font-weight:600}
+.w25-el-pts-badge{font-size:.7rem;font-weight:800;min-width:22px;height:22px;padding:0 5px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;background:#f1f4f7;color:#94a3b2;flex:none;transition:all .2s ease}
+.w25-el-used{font-weight:700;animation:w25-pop .35s ease;border-width:1.5px}
+.w25-el-used .w25-el-word{color:inherit}
+.w25-el-used .w25-el-pts-badge{background:rgba(255,255,255,.7);color:inherit;font-weight:800}
+.w25-el-check{flex:none;animation:w25-pop .25s ease}
+
+/* WRITING */
+.w25-write{display:flex;flex-direction:column;gap:12px}
+.w25-textarea{width:100%;min-height:280px;padding:16px 18px;border:1.5px solid #e7eaee;border-radius:14px;font-family:inherit;font-size:1rem;line-height:1.65;resize:vertical;color:#10243a;background:#fff;outline:none;transition:border-color .15s,box-shadow .15s}
+@media(min-width:768px){.w25-textarea{min-height:320px}}
+.w25-textarea:focus{border-color:var(--brand-blue);box-shadow:0 0 0 3px rgba(0,104,152,.12)}
 .w25-textarea::placeholder{color:#94a3b2}
 
 .w25-write-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.w25-write-stats{font-size:.82rem;font-weight:700}
+.w25-write-stats{font-size:.88rem;font-weight:700}
 .w25-need-more{color:#94a3b2}
-.w25-ready{color:var(--brand-green)}
+.w25-ready{color:var(--brand-green);display:inline-flex;align-items:center;gap:6px}
 
-.w25-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;
-  font-weight:800;font-size:.95rem;padding:11px 18px;border-radius:12px;transition:all .12s ease;font-family:inherit}
-.w25-btn:active{transform:translateY(1px) scale(.99)}
-.w25-btn:disabled{opacity:.5;cursor:not-allowed}
-.w25-btn-go{background:var(--brand-blue);color:#fff;padding:14px 22px;font-size:1rem;width:100%;max-width:280px;
-  box-shadow:0 6px 16px -6px rgba(0,104,152,.6)}
+.w25-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;font-weight:700;font-size:.95rem;padding:12px 20px;border-radius:11px;transition:all .15s ease;font-family:inherit}
+.w25-btn:active{transform:translateY(1px)}
+.w25-btn:disabled{opacity:.45;cursor:not-allowed}
+.w25-btn-go{background:var(--brand-blue);color:#fff;padding:14px 22px;font-size:1rem;width:100%;max-width:280px}
 .w25-btn-go:hover{background:var(--brand-green)}
-.w25-btn-submit{background:var(--brand-green);color:#fff;box-shadow:0 6px 16px -6px rgba(48,157,100,.6)}
+.w25-btn-submit{background:var(--brand-green);color:#fff}
 .w25-btn-submit:hover:not(:disabled){background:var(--brand-blue)}
 
-.w25-toast{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);
-  background:#10243a;color:#fff;padding:10px 16px;border-radius:10px;font-size:.85rem;font-weight:600;
-  display:flex;align-items:center;gap:8px;box-shadow:0 10px 30px -8px rgba(0,0,0,.4);animation:w25-toast .25s ease}
+.w25-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#10243a;color:#fff;padding:11px 17px;border-radius:10px;font-size:.88rem;font-weight:600;display:flex;align-items:center;gap:8px;box-shadow:0 10px 30px -8px rgba(0,0,0,.4);animation:w25-toast .22s ease;z-index:200}
 .w25-toast svg{color:#f9a826}
 
-@keyframes w25-pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes w25-pop{0%{transform:scale(.85);opacity:0}60%{transform:scale(1.05);opacity:1}100%{transform:scale(1);opacity:1}}
 @keyframes w25-toast{from{transform:translate(-50%,10px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
 `;

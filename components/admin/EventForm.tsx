@@ -7,6 +7,8 @@ import type { EventModel } from "@/lib/types";
 type TimelineItem = { time: string; title: string };
 type Facilitator = { name: string; role: string; wiki: string };
 type Organiser = { name: string; role: string };
+type GalleryItem = { url: string; caption: string };
+type LinkItem = { name: string; url: string };
 
 export default function EventForm({
   action,
@@ -30,6 +32,15 @@ export default function EventForm({
   const [organisers, setOrganisers] = useState<Organiser[]>(
     initial?.organisers.map((o) => ({ name: o.name, role: o.role ?? "" })) ??
       [],
+  );
+  const [gallery, setGallery] = useState<GalleryItem[]>(
+    (initial?.gallery ?? []).map((g) => ({
+      url: g.url,
+      caption: g.caption ?? "",
+    })),
+  );
+  const [links, setLinks] = useState<LinkItem[]>(
+    (initial?.links ?? []).map((l) => ({ name: l.name, url: l.url })),
   );
 
   const input =
@@ -265,6 +276,72 @@ export default function EventForm({
         value={JSON.stringify(organisers)}
       />
 
+      {/* GALLERY */}
+      <RepeatSection
+        title="Gallery images"
+        items={gallery}
+        onAdd={() => setGallery([...gallery, { url: "", caption: "" }])}
+        onRemove={(i) => setGallery(gallery.filter((_, x) => x !== i))}
+        render={(item, i) => (
+          <>
+            <input
+              className={input + " flex-1"}
+              placeholder="Image URL (https://...)"
+              value={item.url}
+              onChange={(e) => {
+                const next = [...gallery];
+                next[i] = { ...next[i], url: e.target.value };
+                setGallery(next);
+              }}
+            />
+            <input
+              className={input + " sm:w-56"}
+              placeholder="Caption (optional)"
+              value={item.caption}
+              onChange={(e) => {
+                const next = [...gallery];
+                next[i] = { ...next[i], caption: e.target.value };
+                setGallery(next);
+              }}
+            />
+          </>
+        )}
+      />
+      <input type="hidden" name="gallery" value={JSON.stringify(gallery)} />
+
+      {/* LINKS */}
+      <RepeatSection
+        title="External links"
+        items={links}
+        onAdd={() => setLinks([...links, { name: "", url: "" }])}
+        onRemove={(i) => setLinks(links.filter((_, x) => x !== i))}
+        render={(item, i) => (
+          <>
+            <input
+              className={input + " sm:w-56"}
+              placeholder="Display name (e.g. Meta-Wiki page)"
+              value={item.name}
+              onChange={(e) => {
+                const next = [...links];
+                next[i] = { ...next[i], name: e.target.value };
+                setLinks(next);
+              }}
+            />
+            <input
+              className={input + " flex-1"}
+              placeholder="URL (https://...)"
+              value={item.url}
+              onChange={(e) => {
+                const next = [...links];
+                next[i] = { ...next[i], url: e.target.value };
+                setLinks(next);
+              }}
+            />
+          </>
+        )}
+      />
+      <input type="hidden" name="links" value={JSON.stringify(links)} />
+
       <button
         type="submit"
         className="flex items-center gap-2 bg-brand-blue text-white px-6 py-3 rounded-lg font-bold hover:bg-brand-green transition-colors"
@@ -291,7 +368,14 @@ function RepeatSection<T>({
   return (
     <section className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-bold text-gray-900">{title}</h2>
+        <h2 className="font-bold text-gray-900">
+          {title}
+          {items.length > 0 && (
+            <span className="ml-2 text-sm font-normal text-gray-400">
+              ({items.length})
+            </span>
+          )}
+        </h2>
         <button
           type="button"
           onClick={onAdd}

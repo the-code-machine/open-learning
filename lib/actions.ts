@@ -81,6 +81,8 @@ export async function createEventAction(formData: FormData) {
     timeline: str(formData, "timeline") || "[]",
     facilitators: str(formData, "facilitators") || "[]",
     organisers: str(formData, "organisers") || "[]",
+    gallery: str(formData, "gallery") || "[]",
+    links: str(formData, "links") || "[]",
   });
 
   revalidatePath("/events");
@@ -92,6 +94,27 @@ export async function updateEventAction(formData: FormData) {
   await assertAdmin();
   const id = str(formData, "id");
   if (!id) throw new Error("Event id missing.");
+
+  // DIAGNOSTIC LOGGING — remove once gallery/links save is confirmed working.
+  // This prints to your dev-server terminal so you can see exactly what the
+  // form sent. If gallery/links show "[]" here, the form isn't sending them.
+  // If they show real data here but vanish on reload, the bug is in the read
+  // path (mapper / EventForm initial state), not the write path.
+  console.log("─────────────────────────────────────────");
+  console.log("[updateEventAction] id =", id);
+  console.log(
+    "[updateEventAction] gallery =",
+    JSON.stringify(formData.get("gallery")),
+  );
+  console.log(
+    "[updateEventAction] links   =",
+    JSON.stringify(formData.get("links")),
+  );
+  console.log(
+    "[updateEventAction] all keys:",
+    Array.from(formData.keys()).join(", "),
+  );
+  console.log("─────────────────────────────────────────");
 
   await db
     .update(events)
@@ -108,6 +131,8 @@ export async function updateEventAction(formData: FormData) {
       timeline: str(formData, "timeline") || "[]",
       facilitators: str(formData, "facilitators") || "[]",
       organisers: str(formData, "organisers") || "[]",
+      gallery: str(formData, "gallery") || "[]",
+      links: str(formData, "links") || "[]",
     })
     .where(eq(events.id, id));
 

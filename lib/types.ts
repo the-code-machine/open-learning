@@ -35,6 +35,16 @@ export interface RuleItem {
   detail: string;
 }
 
+export interface GalleryImage {
+  url: string;
+  caption?: string;
+}
+
+export interface EventLink {
+  name: string;
+  url: string;
+}
+
 /** Event with JSON fields parsed. */
 export interface EventModel {
   id: string;
@@ -50,6 +60,8 @@ export interface EventModel {
   timeline: TimelineItem[];
   facilitators: Facilitator[];
   organisers: Organiser[];
+  gallery: GalleryImage[];
+  links: EventLink[];
   createdAt: Date;
 }
 
