@@ -23,7 +23,7 @@ export default function JoinCTA() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           {/* Primary Action: Join (Uses Brand Green for "Go") */}
           <Link
-            href="https://t.me/wikiopenlearning"
+            href="https://meta.wikimedia.org/wiki/Wiki_Open_Learning/Members"
             className="w-full sm:w-auto px-8 py-4 bg-brand-green hover:bg-green-600 text-white font-bold rounded-lg transition-all duration-300 transform hover:-translate-y-1 shadow-lg shadow-green-900/20 flex items-center justify-center gap-2"
           >
             Become a Member <ArrowRight size={20} />

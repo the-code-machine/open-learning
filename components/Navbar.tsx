@@ -77,7 +77,7 @@ export default function Navbar() {
 
             {/* Call to Action Button (Optional, but looks good) */}
             <Link
-              href="https://t.me/wikiopenlearning"
+              href="https://meta.wikimedia.org/wiki/Wiki_Open_Learning/Learnings"
               className="bg-brand-blue text-white px-5 py-2 rounded-full font-semibold hover:bg-brand-green transition-colors duration-300 shadow-sm"
             >
               Join Us

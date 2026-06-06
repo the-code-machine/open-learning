@@ -44,8 +44,26 @@ export default function Hero() {
       />
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* WOL logo — top right corner. Plain <img> intentionally (Next's
+            Image component blocks external SVGs without config; this one
+            file is hosted on Commons and is the project's own brand mark). */}
+        <a
+          href="https://meta.wikimedia.org/wiki/Wiki_Open_Learning"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Wiki Open Learning on Meta-Wiki"
+          className="absolute top-0 right-4 sm:right-6 lg:right-8 z-10 opacity-80 hover:opacity-100 transition-opacity"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/d/d8/Wiki_Open_Learning_Black_SVG_Logo.svg"
+            alt="Wiki Open Learning"
+            className="h-14 sm:h-20 w-auto"
+          />
+        </a>
+
         {/* tiny meta line, like the breadcrumb above a Wikipedia article */}
-        <p className="text-xs text-gray-400 mb-3 font-mono">
+        <p className="text-xs text-gray-400 mb-3 font-mono pr-20 sm:pr-24">
           From Meta-Wiki · A community initiative
         </p>
 
