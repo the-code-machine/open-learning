@@ -32,7 +32,7 @@ import type { GamePlayProps } from "@/lib/game-types";
 
 const TIME_LIMIT_SECONDS = 8 * 60;
 const MIN_WORDS = 100;
-const BASE_POINTS_MULT = 10000;
+const BASE_POINTS_MULT = 100;
 const LENGTH_MULT = 100;
 const SPEED_MAX = 99;
 
