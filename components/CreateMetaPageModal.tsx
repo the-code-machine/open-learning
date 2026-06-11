@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   X,
   ExternalLink,
@@ -22,18 +22,15 @@ import {
 import MetaPagePreview from "./MetaPagePreview";
 
 /**
- * CreateMetaPageModal v3 — event-aware + live preview.
+ * CreateMetaPageModal v4 — event-aware + live preview.
  *
- * Desktop (≥1024px): split layout, form on the left, live Meta-Wiki rendering
- * on the right. Modal is wider (~58rem).
- *
- * Mobile / tablet: form fills the modal. A "Show preview" toggle expands a
- * preview panel below the form. Saves vertical space when the user is still
- * filling things in.
- *
- * Preview is powered by Meta-Wiki's parse API (see MetaPagePreview.tsx) so
- * what you see in the modal matches what will appear on Meta-Wiki when you
- * publish.
+ * USERNAME INPUT FIX: previously an effect auto-filled the username field
+ * whenever the participant was selected, and listed `username` in its deps —
+ * which made the field flicker / snap back to old values while typing.
+ * Now the auto-fill runs only when the SELECTED slug actually changes, and
+ * only writes if the user hasn't already typed something. We track the last
+ * slug we auto-filled for so we don't re-apply when the user clears the
+ * field intentionally.
  */
 
 interface Props {
@@ -62,7 +59,10 @@ export default function CreateMetaPageModal({
   const [touched, setTouched] = useState(false);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
 
-  // reset on close
+  /* Track which slug we've already auto-filled the username for, so we don't
+     keep clobbering the user's input on every re-render. */
+  const autofilledFor = useRef<string>("");
+
   useEffect(() => {
     if (!open) {
       setSelectedSlug("");
@@ -73,10 +73,10 @@ export default function CreateMetaPageModal({
       setCopied(false);
       setTouched(false);
       setMobilePreviewOpen(false);
+      autofilledFor.current = "";
     }
   }, [open]);
 
-  // escape to close + lock body scroll while open
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -89,12 +89,18 @@ export default function CreateMetaPageModal({
     };
   }, [open, onClose]);
 
-  // auto-prefill username when the picked participant has one on file
+  /* AUTO-FILL EFFECT — runs only when the picked slug changes, and only
+     touches the input if it's empty. Will not re-fire on each keystroke. */
   useEffect(() => {
     if (!selectedSlug || !event) return;
+    if (autofilledFor.current === selectedSlug) return;
     const p = getParticipant(eventId, selectedSlug);
-    if (p?.wikiUsername && !username) setUsername(p.wikiUsername);
-  }, [selectedSlug, eventId, event, username]);
+    if (p?.wikiUsername) {
+      setUsername(p.wikiUsername);
+    }
+    autofilledFor.current = selectedSlug;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSlug, eventId, event]);
 
   if (!open) return null;
   void eventName;
@@ -164,7 +170,6 @@ export default function CreateMetaPageModal({
     );
   }
 
-  // form column — extracted because we render it in both desktop and mobile
   const formColumn = (
     <div className="overflow-y-auto px-5 sm:px-6 py-5 space-y-4">
       <div className="bg-blue-50/40 border border-blue-100/60 rounded-lg p-3 text-xs">
@@ -278,11 +283,12 @@ export default function CreateMetaPageModal({
           placeholder="e.g. MeeraW (no User: prefix)"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          autoComplete="off"
         />
         <p className="text-xs text-gray-400 mt-1">
           {selectedParticipant?.wikiUsername
-            ? "Pre-filled from your registration."
-            : "If you don't have a Wikimedia account yet, create one first at wikipedia.org and come back."}
+            ? "Pre-filled from your registration — change it if needed."
+            : "Don't have an account? Create one at wikipedia.org first, then come back."}
         </p>
       </div>
 
@@ -306,7 +312,6 @@ export default function CreateMetaPageModal({
         </pre>
       </details>
 
-      {/* mobile-only preview toggle */}
       <div className="lg:hidden">
         <button
           type="button"
@@ -336,7 +341,6 @@ export default function CreateMetaPageModal({
         className="relative bg-white w-full lg:w-[58rem] max-w-full max-h-[95vh] sm:max-h-[92vh] rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* header */}
         <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-100 bg-brand-blue text-white shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
@@ -360,20 +364,15 @@ export default function CreateMetaPageModal({
           </button>
         </div>
 
-        {/* body — split on desktop, stacked on mobile */}
         <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
-          {/* form side */}
           <div className="flex-1 min-h-0 flex flex-col lg:border-r lg:border-gray-100 lg:max-w-[26rem]">
             {formColumn}
           </div>
-
-          {/* preview side — desktop only (mobile has its own toggle in formColumn) */}
           <div className="hidden lg:flex flex-col flex-1 min-h-0 bg-gray-50">
             <MetaPagePreview wikitext={wikitext} />
           </div>
         </div>
 
-        {/* footer */}
         <div className="px-5 sm:px-6 py-4 border-t border-gray-100 bg-gray-50/60 flex flex-col sm:flex-row gap-2 shrink-0">
           <button
             type="button"
@@ -404,7 +403,6 @@ export default function CreateMetaPageModal({
   );
 }
 
-/* fallback shell when there's no event data */
 function Shell({
   onClose,
   title,
