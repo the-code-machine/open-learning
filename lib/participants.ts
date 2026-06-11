@@ -223,12 +223,7 @@ export function buildMetaWikitext(opts: {
   lines.push(
     '<div style="font-size:0.85em; color:#54595d; margin-top:0.8em;">',
   );
-  lines.push(
-    `<span style="display:inline-block; background:#e6f0ff; color:#3366cc; padding:2px 10px; border-radius:10px; margin-right:6px; font-weight:bold;">Wiki Open Learning</span>`,
-  );
-  lines.push(
-    `<span style="display:inline-block; background:#fff4e0; color:#8a5500; padding:2px 10px; border-radius:10px; font-weight:bold;">Wikipedia 25 · ${event.eventDate}</span>`,
-  );
+
   lines.push("</div>");
   lines.push("");
   lines.push("[[Category:Wiki Open Learning members]]");
