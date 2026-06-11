@@ -386,7 +386,7 @@ export default async function EventDetailsPage({
       </div>
 
       {/* Bottom CTA — create-your-Meta-page tool */}
-      <CreateMetaPageCTA eventName={event.title} />
+      <CreateMetaPageCTA eventName={event.title} eventId={event.id} />
     </div>
   );
 }
