@@ -28,7 +28,11 @@ import {
   formatDate,
   brandGradient,
 } from "@/components/ui/Badges";
-
+import {
+  fetchAllCommonsImagesForEvent,
+  fetchCommonsImages,
+} from "@/lib/commons";
+import EventGallery from "@/components/EventGalleryPage";
 export const dynamic = "force-dynamic";
 
 // Pre-build known event pages; new ones still render on demand.
@@ -215,37 +219,23 @@ export default async function EventDetailsPage({
             )}
 
             {/* Gallery */}
-            {event.gallery.length > 0 && (
-              <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
-                <div className="flex items-center gap-2 mb-6">
-                  <ImageIcon className="text-brand-blue" size={24} />
-                  <h2 className="text-2xl font-bold text-gray-900">Gallery</h2>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {event.gallery.map((img, i) => (
-                    <a
-                      key={i}
-                      href={img.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group relative aspect-square overflow-hidden rounded-xl bg-gray-100 border border-gray-100 hover:border-brand-blue transition-all"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={img.url}
-                        alt={img.caption ?? `Gallery image ${i + 1}`}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      {img.caption && (
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent text-white text-xs p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {img.caption}
-                        </div>
-                      )}
-                    </a>
-                  ))}
-                </div>
-              </div>
+            {/* Gallery — manual URLs + Commons categories */}
+            {(event.gallery.length > 0 ||
+              event.galleryCategories.length > 0) && (
+              <EventGallery
+                manual={event.gallery}
+                commons={await Promise.all(
+                  event.galleryCategories.map(async (cat) => {
+                    const r = await fetchCommonsImages(cat, null);
+                    return {
+                      category: cat,
+                      images: r.images,
+                      next: r.next,
+                      error: r.error,
+                    };
+                  }),
+                )}
+              />
             )}
           </div>
 

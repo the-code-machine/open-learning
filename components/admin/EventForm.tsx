@@ -9,6 +9,7 @@ type Facilitator = { name: string; role: string; wiki: string };
 type Organiser = { name: string; role: string };
 type GalleryItem = { url: string; caption: string };
 type LinkItem = { name: string; url: string };
+type CategoryItem = { name: string };
 
 export default function EventForm({
   action,
@@ -41,6 +42,9 @@ export default function EventForm({
   );
   const [links, setLinks] = useState<LinkItem[]>(
     (initial?.links ?? []).map((l) => ({ name: l.name, url: l.url })),
+  );
+  const [categories, setCategories] = useState<CategoryItem[]>(
+    (initial?.galleryCategories ?? []).map((c) => ({ name: c })),
   );
 
   const input =
@@ -341,6 +345,37 @@ export default function EventForm({
         )}
       />
       <input type="hidden" name="links" value={JSON.stringify(links)} />
+      {/* COMMONS CATEGORIES */}
+      <RepeatSection
+        title="Wikimedia Commons categories"
+        items={categories}
+        onAdd={() => setCategories([...categories, { name: "" }])}
+        onRemove={(i) => setCategories(categories.filter((_, x) => x !== i))}
+        render={(item, i) => (
+          <input
+            className={input + " flex-1"}
+            placeholder='e.g. "Wikipedia 25 Celebration in Vidisha"'
+            value={item.name}
+            onChange={(e) => {
+              const next = [...categories];
+              next[i] = { name: e.target.value };
+              setCategories(next);
+            }}
+          />
+        )}
+      />
+      <p className="text-xs text-gray-500 -mt-4 mb-2 italic">
+        All images in these Commons categories will appear in the gallery
+        automatically (refreshed every 5 minutes). Paste the name without the
+        "Category:" prefix.
+      </p>
+      <input
+        type="hidden"
+        name="galleryCategories"
+        value={JSON.stringify(
+          categories.map((c) => c.name.trim()).filter(Boolean),
+        )}
+      />
 
       <button
         type="submit"

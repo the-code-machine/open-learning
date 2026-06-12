@@ -61,14 +61,11 @@ export async function logoutAction() {
 
 export async function createEventAction(formData: FormData) {
   await assertAdmin();
-  const title = str(formData, "title");
-  if (!title) throw new Error("Title is required.");
-
-  const id = str(formData, "id") || slugify(title);
-
+  const id = str(formData, "id");
+  if (!id) throw new Error("Event id missing.");
   await db.insert(events).values({
     id,
-    title,
+    title: str(formData, "title"),
     details: str(formData, "details"),
     date: str(formData, "date"),
     time: str(formData, "time"),
@@ -77,45 +74,22 @@ export async function createEventAction(formData: FormData) {
     status: (str(formData, "status") || "upcoming") as EventStatus,
     category: str(formData, "category") || "Event",
     coverImage: str(formData, "coverImage") || null,
-    // structured fields arrive as JSON strings from the form's hidden inputs
     timeline: str(formData, "timeline") || "[]",
     facilitators: str(formData, "facilitators") || "[]",
     organisers: str(formData, "organisers") || "[]",
     gallery: str(formData, "gallery") || "[]",
     links: str(formData, "links") || "[]",
+    galleryCategories: str(formData, "galleryCategories") || "[]",
   });
-
+  revalidatePath("/admin/events");
   revalidatePath("/events");
-  revalidatePath("/admin");
-  redirect(`/admin/events/${id}`);
+  revalidatePath(`/events/${id}`);
 }
 
 export async function updateEventAction(formData: FormData) {
   await assertAdmin();
   const id = str(formData, "id");
   if (!id) throw new Error("Event id missing.");
-
-  // DIAGNOSTIC LOGGING — remove once gallery/links save is confirmed working.
-  // This prints to your dev-server terminal so you can see exactly what the
-  // form sent. If gallery/links show "[]" here, the form isn't sending them.
-  // If they show real data here but vanish on reload, the bug is in the read
-  // path (mapper / EventForm initial state), not the write path.
-  console.log("─────────────────────────────────────────");
-  console.log("[updateEventAction] id =", id);
-  console.log(
-    "[updateEventAction] gallery =",
-    JSON.stringify(formData.get("gallery")),
-  );
-  console.log(
-    "[updateEventAction] links   =",
-    JSON.stringify(formData.get("links")),
-  );
-  console.log(
-    "[updateEventAction] all keys:",
-    Array.from(formData.keys()).join(", "),
-  );
-  console.log("─────────────────────────────────────────");
-
   await db
     .update(events)
     .set({
@@ -133,13 +107,12 @@ export async function updateEventAction(formData: FormData) {
       organisers: str(formData, "organisers") || "[]",
       gallery: str(formData, "gallery") || "[]",
       links: str(formData, "links") || "[]",
+      galleryCategories: str(formData, "galleryCategories") || "[]",
     })
     .where(eq(events.id, id));
-
+  revalidatePath("/admin/events");
   revalidatePath("/events");
   revalidatePath(`/events/${id}`);
-  revalidatePath("/admin");
-  redirect(`/admin/events/${id}`);
 }
 
 export async function deleteEventAction(formData: FormData) {

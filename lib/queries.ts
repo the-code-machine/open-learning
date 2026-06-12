@@ -25,6 +25,7 @@ import type {
   GalleryImage,
   EventLink,
   RuleItem,
+  Mode,
 } from "./types";
 import type { EventRow, GameRow, RegistrationRow } from "@/db/schema";
 import registryJson from "./games-registry.json";
@@ -59,9 +60,9 @@ function mapEvent(row: EventRow): EventModel {
     details: row.details,
     date: row.date,
     time: row.time,
-    mode: row.mode,
+    mode: row.mode as Mode,
     location: row.location,
-    status: row.status,
+    status: row.status as EventStatus,
     category: row.category,
     coverImage: row.coverImage ?? null,
     timeline: safeParse<TimelineItem[]>(row.timeline, []),
@@ -69,6 +70,7 @@ function mapEvent(row: EventRow): EventModel {
     organisers: safeParse<Organiser[]>(row.organisers, []),
     gallery: safeParse<GalleryImage[]>(row.gallery, []),
     links: safeParse<EventLink[]>(row.links, []),
+    galleryCategories: safeParse<string[]>(row.galleryCategories, []),
     createdAt: row.createdAt,
   };
 }
@@ -78,13 +80,14 @@ function mapGame(row: GameRow): GameModel {
     id: row.id,
     title: row.title,
     description: row.description,
-    type: row.type,
-    mode: row.mode,
-    defaultTeamSize: row.defaultTeamSize ?? 0,
+    type: row.type as "individual" | "team",
+    mode: row.mode as Mode,
+    defaultTeamSize: row.defaultTeamSize,
     coverImage: row.coverImage ?? null,
     rules: safeParse<RuleItem[]>(row.rules, []),
-    componentKey: row.componentKey ?? "",
-    maxScore: row.maxScore ?? 0,
+    componentKey: row.componentKey,
+    maxScore: row.maxScore,
+    config: safeParse<Record<string, unknown>>(row.config, {}),
     createdAt: row.createdAt,
   };
 }

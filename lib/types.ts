@@ -166,3 +166,69 @@ export interface TeamGroup {
   isWinner: boolean;
   totalScore: number;
 }
+/**
+ * Image fetched from a Commons category. Has more fields than GalleryImage
+ * because we get richer metadata from the Commons API (uploader, dimensions,
+ * Commons page URL for attribution). The gallery component normalizes both
+ * GalleryImage and CommonsImage into a common shape for rendering.
+ */
+export interface CommonsImage {
+  /** Canonical filename, e.g. "File:Vidisha_2026_27.png" */
+  title: string;
+  /** Full-resolution direct image URL */
+  url: string;
+  /** 800px-wide thumbnail URL for grid display */
+  thumbUrl: string;
+  width: number;
+  height: number;
+  /** Link to the Commons file page (for "View on Commons" links / attribution) */
+  descriptionUrl: string;
+}
+
+/** Event with JSON fields parsed. */
+export interface EventModel {
+  id: string;
+  title: string;
+  details: string;
+  date: string;
+  time: string;
+  mode: Mode;
+  location: string;
+  status: EventStatus;
+  category: string;
+  coverImage: string | null;
+  timeline: TimelineItem[];
+  facilitators: Facilitator[];
+  organisers: Organiser[];
+  gallery: GalleryImage[];
+  links: EventLink[];
+  /** Commons category names to fetch images from at render time */
+  galleryCategories: string[];
+  createdAt: Date;
+}
+
+export interface GameModel {
+  id: string;
+  title: string;
+  description: string;
+  type: "individual" | "team";
+  mode: Mode;
+  defaultTeamSize: number;
+  coverImage: string | null;
+  rules: RuleItem[];
+  componentKey: string;
+  maxScore: number;
+  config: Record<string, unknown>;
+  createdAt: Date;
+}
+
+export interface EventStats {
+  registrationsCount: number;
+  participationsCount: number;
+  gamesCount: number;
+}
+
+export interface GameStats {
+  totalParticipations: number;
+  avgScore: number;
+}

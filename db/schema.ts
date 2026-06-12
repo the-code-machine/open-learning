@@ -13,42 +13,32 @@ import { sql } from "drizzle-orm";
  * The `id` is a human-readable slug, used directly in the URL: /events/[id]
  */
 export const events = sqliteTable("events", {
-  // slug, e.g. "wiki-hackathon-2025"
   id: text("id").primaryKey(),
   title: text("title").notNull(),
   details: text("details").notNull().default(""),
-  // ISO date string YYYY-MM-DD for the primary/sort date
   date: text("date").notNull(),
-  // free-text human window, e.g. "10:00 AM - 6:00 PM"
   time: text("time").notNull().default(""),
-  // online | offline | hybrid
-  mode: text("mode", { enum: ["online", "offline", "hybrid"] })
-    .notNull()
-    .default("offline"),
+  mode: text("mode").notNull().default("offline"),
   location: text("location").notNull().default(""),
-  // upcoming | ongoing | past  (drives Upcoming/Past split on /events)
-  status: text("status", { enum: ["upcoming", "ongoing", "past"] })
-    .notNull()
-    .default("upcoming"),
+  status: text("status").notNull().default("upcoming"),
   category: text("category").notNull().default("Event"),
   coverImage: text("cover_image"),
-  // Structured fields stored as JSON text (SQLite has no native JSON column,
-  // libSQL parses on read via the helpers in lib/queries.ts).
-  // timeline: [{ time: string, title: string }]
+  // timeline: [{ time, title }]
   timeline: text("timeline").notNull().default("[]"),
-  // facilitators: [{ name, role?, wiki?, photo? }]
+  // facilitators: [{ name, role?, wiki? }]
   facilitators: text("facilitators").notNull().default("[]"),
   // organisers: [{ name, role?, contact? }]
   organisers: text("organisers").notNull().default("[]"),
-  // gallery: JSON array of { url, caption? } shown as image grid on event page
+  // gallery: [{ url, caption? }]
   gallery: text("gallery").notNull().default("[]"),
-  // links: JSON array of { name, url } external link objects shown on event page
+  // links: [{ name, url }]
   links: text("links").notNull().default("[]"),
+  // galleryCategories: ["Wikipedia 25 Celebration in Vidisha", ...]
+  galleryCategories: text("gallery_categories").notNull().default("[]"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .$defaultFn(() => new Date()),
 });
-
 /**
  * GAMES
  * A reusable activity. The SAME game can be attached to MANY events.
